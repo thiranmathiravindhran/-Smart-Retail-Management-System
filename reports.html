@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Smart Retail Management</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+        }
+
+        header {
+            background: #1f4e79;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        nav {
+            background: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        nav a {
+            margin: 5px 10px;
+            text-decoration: none;
+            color: #1f4e79;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 30px auto;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .card, .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .card {
+            text-align: center;
+        }
+
+        .card h3 {
+            color: #1f4e79;
+        }
+
+        .value {
+            font-size: 30px;
+            font-weight: bold;
+            margin-top: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .section {
+            margin-top: 25px;
+        }
+
+        select, button {
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 15px;
+        }
+
+        select {
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #bbb;
+            margin: 8px 0 15px;
+        }
+
+        button {
+            background: #1f4e79;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #163a5c;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #reportResult {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f4f6f8;
+            border-radius: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .error {
+            color: #b00020;
+        }
+
+        .success {
+            color: #176b36;
+        }
+
+        @media (max-width: 600px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                width: 92%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Smart Retail Management System</h1>
+    <h2>Reports</h2>
+</header>
+
+<nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales Data</a>
+    <a href="forecast.html">Demand Forecasting</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+</nav>
+
+<div class="container">
+
+    <h2>Retail Performance Report</h2>
+
+    <div class="cards">
+        <div class="card">
+            <h3>Total Products</h3>
+            <div class="value" id="totalProducts">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h3>Total Sales Amount</h3>
+            <div class="value" id="totalSales">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h3>Current Stock</h3>
+            <div class="value" id="currentStock">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h3>Forecast Demand (7 Days)</h3>
+            <div class="value" id="forecastDemand">--</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Inventory Status</h2>
+        <label for="productSelect">Select Product:</label><br>
+        <select id="productSelect">
+            <option value="">Loading products...</option>
+        </select>
+
+        <div id="inventoryStatus">
+            Select a product to view its inventory report.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Generate Report</h2>
+        <button id="generateButton" onclick="generateReport()">
+            Generate Report
+        </button>
+
+        <div id="reportResult" aria-live="polite">
+            Click the button to generate the report.
+        </div>
+    </div>
+
+</div>
+
+<script>
+"use strict";
+
+let productsData = [];
+let salesData = [];
+let salesLoaded = false;
+
+function getProductId(product) {
+    return product.id ?? product.product_id ?? product.productId;
+}
+
+function getProductName(product) {
+    return product.product_name ??
+           product.name ??
+           product.productName ??
+           "Unnamed Product";
+}
+
+function getStock(product) {
+    return Number(
+        product.stock_quantity ??
+        product.stock ??
+        product.quantity ??
+        0
+    );
+}
+
+function money(value) {
+    return "₹" + Number(value || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+async function fetchJson(url) {
+    const response = await fetch(url, {
+        headers: { "Accept": "application/json" }
+    });
+
+    if (!response.ok) {
+        throw new Error(url + " returned HTTP " + response.status);
+    }
+
+    return response.json();
+}
+
+function normalizeArray(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.products)) return data.products;
+    if (data && Array.isArray(data.sales)) return data.sales;
+    if (data && Array.isArray(data.data)) return data.data;
+    throw new Error("API did not return an expected list.");
+}
+
+async function loadReport() {
+    const productCount = document.getElementById("totalProducts");
+    const stockElement = document.getElementById("currentStock");
+    const salesElement = document.getElementById("totalSales");
+    const select = document.getElementById("productSelect");
+
+    try {
+        const productResponse = await fetchJson("/api/products");
+        productsData = normalizeArray(productResponse);
+
+        productCount.textContent = productsData.length;
+
+        const totalStock = productsData.reduce(
+            (sum, product) => sum + getStock(product), 0
+        );
+        stockElement.textContent = totalStock;
+
+        select.innerHTML = "";
+
+        if (productsData.length === 0) {
+            select.innerHTML = '<option value="">No products found</option>';
+        } else {
+            select.innerHTML = '<option value="">-- Select Product --</option>';
+
+            productsData.forEach(product => {
+                const option = document.createElement("option");
+                option.value = String(getProductId(product));
+                option.textContent =
+                    getProductName(product) +
+                    " (Stock: " + getStock(product) + ")";
+                select.appendChild(option);
+            });
+        }
+
+        try {
+            const salesResponse = await fetchJson("/api/sales");
+            salesData = normalizeArray(salesResponse);
+            salesLoaded = true;
+
+            const totalSalesAmount = salesData.reduce((sum, sale) => {
+                const amount = Number(
+                    sale.total_amount ??
+                    sale.totalAmount ??
+                    sale.amount ??
+                    0
+                );
+                return sum + (Number.isFinite(amount) ? amount : 0);
+            }, 0);
+
+            salesElement.textContent = money(totalSalesAmount);
+        } catch (salesError) {
+            salesLoaded = false;
+            salesElement.textContent = "Unavailable";
+            salesElement.title = salesError.message;
+            console.error("Could not load sales:", salesError);
+        }
+
+        if (productsData.length > 0) {
+            select.selectedIndex = productsData.length > 0 ? 1 : 0;
+            updateInventoryStatus();
+        }
+
+    } catch (error) {
+        productCount.textContent = "Unavailable";
+        stockElement.textContent = "Unavailable";
+        salesElement.textContent = "Unavailable";
+        select.innerHTML = '<option value="">Could not load products</option>';
+
+        document.getElementById("inventoryStatus").innerHTML =
+            '<p class="error">Could not load report data. Check that the Flask server is running.</p>';
+
+        console.error("Report loading error:", error);
+    }
+}
+
+function getSelectedProduct() {
+    const selectedId = document.getElementById("productSelect").value;
+
+    return productsData.find(product =>
+        String(getProductId(product)) === selectedId
+    );
+}
+
+function getProductSales(product) {
+    const productId = getProductId(product);
+
+    return salesData.filter(sale => {
+        const saleProductId =
+            sale.product_id ?? sale.productId ?? sale.id_product;
+
+        return String(saleProductId) === String(productId);
+    });
+}
+
+function calculateForecast(product) {
+    const productSales = getProductSales(product);
+
+    if (productSales.length === 0) {
+        return {
+            demand: 0,
+            totalQuantity: 0,
+            sellingDays: 0
+        };
+    }
+
+    const dailyTotals = {};
+
+    productSales.forEach(sale => {
+        const quantity = Number(
+            sale.quantity_sold ??
+            sale.quantitySold ??
+            sale.quantity ??
+            0
+        );
+
+        const date = sale.sale_date ?? sale.saleDate ?? "unknown";
+
+        if (Number.isFinite(quantity)) {
+            dailyTotals[date] = (dailyTotals[date] || 0) + quantity;
+        }
+    });
+
+    const totalQuantity = Object.values(dailyTotals).reduce(
+        (sum, quantity) => sum + quantity, 0
+    );
+
+    const sellingDays = Object.keys(dailyTotals).filter(
+        date => date !== "unknown"
+    ).length;
+
+    const demand = sellingDays > 0
+        ? Math.ceil((totalQuantity / sellingDays) * 7)
+        : 0;
+
+    return { demand, totalQuantity, sellingDays };
+}
+
+function updateInventoryStatus() {
+    const product = getSelectedProduct();
+    const container = document.getElementById("inventoryStatus");
+
+    if (!product) {
+        container.textContent = "Select a product to view its inventory report.";
+        document.getElementById("forecastDemand").textContent = "--";
+        return;
+    }
+
+    const stock = getStock(product);
+    const forecast = salesLoaded
+        ? calculateForecast(product)
+        : { demand: null, totalQuantity: 0, sellingDays: 0 };
+
+    document.getElementById("forecastDemand").textContent =
+        forecast.demand === null ? "Unavailable" : forecast.demand + " Units";
+
+    if (forecast.demand === null) {
+        container.innerHTML =
+            '<p class="error">Sales data is unavailable. Forecast cannot be calculated.</p>';
+        return;
+    }
+
+    const recommendedOrder = Math.max(0, forecast.demand - stock);
+    const status = recommendedOrder > 0
+        ? "REORDER REQUIRED"
+        : "STOCK SUFFICIENT";
+
+    container.innerHTML = `
+        <p><b>Product:</b> ${escapeHtml(getProductName(product))}</p>
+        <p><b>Current Stock:</b> ${stock} Units</p>
+        <p><b>Predicted Demand:</b> ${forecast.demand} Units</p>
+        <p><b>Recommended Order:</b> ${recommendedOrder} Units</p>
+        <p class="status"><b>Status:</b> ${status}</p>
+        <p><b>Historical Sales:</b> ${forecast.totalQuantity} Units over ${forecast.sellingDays} selling days</p>
+    `;
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
+}
+
+function generateReport() {
+    const product = getSelectedProduct();
+    const result = document.getElementById("reportResult");
+
+    if (!product) {
+        result.innerHTML =
+            '<p class="error">Please select a product first.</p>';
+        return;
+    }
+
+    if (!salesLoaded) {
+        result.innerHTML =
+            '<p class="error">Sales data could not be loaded. Check the /api/sales endpoint before generating the report.</p>';
+        return;
+    }
+
+    const forecast = calculateForecast(product);
+    const stock = getStock(product);
+    const order = Math.max(0, forecast.demand - stock);
+    const status = order > 0 ? "REORDER REQUIRED" : "STOCK SUFFICIENT";
+
+    result.innerHTML = `
+        <h3 class="success">Report Generated Successfully!</h3>
+        <p><b>Product:</b> ${escapeHtml(getProductName(product))}</p>
+        <p><b>Historical Sales:</b> ${forecast.totalQuantity} Units</p>
+        <p><b>Selling Days:</b> ${forecast.sellingDays}</p>
+        <p><b>Forecast Demand (Next 7 Days):</b> ${forecast.demand} Units</p>
+        <p><b>Current Stock:</b> ${stock} Units</p>
+        <p><b>Recommended Order:</b> ${order} Units</p>
+        <p><b>Inventory Status:</b> ${status}</p>
+        <p><small>Forecast is based on average recorded sales per selling day; it is a simple estimate, not a machine-learning prediction.</small></p>
+    `;
+}
+
+document.getElementById("productSelect").addEventListener(
+    "change", updateInventoryStatus
+);
+
+loadReport();
+</script>
+
+</body>
+</html>

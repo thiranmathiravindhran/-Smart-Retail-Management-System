@@ -1,0 +1,30 @@
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local configuration
+instance/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+backend/serverlog.txt
+backend/python
+
+# Database files
+*.db
+*.sqlite3

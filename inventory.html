@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory Optimization</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            margin: 0;
+        }
+
+        header {
+            background: #1f4e79;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 500px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #1f4e79;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #163a5c;
+        }
+
+        #result {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f4f6f8;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Smart Retail Management System</h1>
+    <h2>Inventory Optimization</h2>
+</header>
+
+<div class="container">
+
+    <h2>Inventory Optimization</h2>
+
+    <label>Product:</label>
+
+    <select id="product">
+        <option value="">-- Select Product --</option>
+        <option value="pen">Pen</option>
+    </select>
+
+    <label>Current Stock:</label>
+
+    <input
+        type="number"
+        id="stock"
+        value="50"
+        min="0"
+    >
+
+    <label>Predicted Demand:</label>
+
+    <input
+        type="number"
+        id="demand"
+        placeholder="Enter predicted demand"
+        min="0"
+    >
+
+    <label>Reorder Level:</label>
+
+    <input
+        type="number"
+        id="reorder"
+        placeholder="Enter reorder level"
+        min="0"
+    >
+
+    <button type="button" onclick="optimizeInventory()">
+        Optimize Inventory
+    </button>
+
+    <div id="result">
+
+        <h3>Optimization Result</h3>
+
+        <p>Select product and enter values.</p>
+
+    </div>
+
+</div>
+
+<script>
+
+function optimizeInventory() {
+
+    let product =
+        document.getElementById("product").value;
+
+    let stock =
+        Number(document.getElementById("stock").value);
+
+    let demand =
+        Number(document.getElementById("demand").value);
+
+    let reorder =
+        Number(document.getElementById("reorder").value);
+
+
+    if (product === "") {
+
+        alert("Please select a product");
+
+        return;
+    }
+
+
+    if (demand <= 0 || reorder <= 0) {
+
+        alert("Please enter Predicted Demand and Reorder Level");
+
+        return;
+    }
+
+
+    let orderQuantity = 0;
+
+    let status = "";
+
+
+    if (stock < demand || stock <= reorder) {
+
+        orderQuantity = demand - stock;
+
+        if (orderQuantity < 0) {
+
+            orderQuantity = 0;
+
+        }
+
+        status = "REORDER REQUIRED";
+
+    } else {
+
+        status = "STOCK AVAILABLE";
+
+    }
+
+
+    document.getElementById("result").innerHTML =
+
+        "<h3>Optimization Result</h3>" +
+
+        "<p><b>Product:</b> " +
+        product +
+        "</p>" +
+
+        "<p><b>Current Stock:</b> " +
+        stock +
+        " Units</p>" +
+
+        "<p><b>Predicted Demand:</b> " +
+        demand +
+        " Units</p>" +
+
+        "<p><b>Reorder Level:</b> " +
+        reorder +
+        " Units</p>" +
+
+        "<p><b>Recommended Order:</b> " +
+        orderQuantity +
+        " Units</p>" +
+
+        "<p><b>Status:</b> " +
+        status +
+        "</p>";
+}
+
+</script>
+
+</body>
+</html>

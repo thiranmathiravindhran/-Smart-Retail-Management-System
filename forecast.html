@@ -1,0 +1,414 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demand Forecasting - Smart Retail</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            color: #333;
+        }
+
+        header {
+            background: #1f4e79;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        nav {
+            background: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        nav a {
+            display: inline-block;
+            margin: 7px 10px;
+            text-decoration: none;
+            color: #1f4e79;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 750px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 18px;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 13px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+
+        select {
+            background: white;
+        }
+
+        button {
+            margin-top: 22px;
+            background: #1f4e79;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #163a5c;
+        }
+
+        button:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f4f6f8;
+            border-radius: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .result-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+
+        .result-card p {
+            margin: 6px 0;
+        }
+
+        .result-value {
+            color: #1f4e79;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #18743a;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #b45309;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #b00020;
+            font-weight: bold;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Smart Retail Management System</h1>
+    <h2>Demand Forecasting</h2>
+</header>
+
+<nav>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/products">Products</a>
+    <a href="/sales">Sales Data</a>
+    <a href="/forecast">Demand Forecasting</a>
+    <a href="/inventory">Inventory</a>
+    <a href="/reports">Reports</a>
+</nav>
+
+<div class="container">
+    <h2>Demand Forecasting</h2>
+
+    <p>
+        Select a product to estimate future demand using
+        sales records stored in the database.
+    </p>
+
+    <label for="product">Select Product</label>
+
+    <select id="product">
+        <option value="">Loading products...</option>
+    </select>
+
+    <button id="forecastButton" type="button" disabled>
+        Forecast Demand
+    </button>
+
+    <div id="result" aria-live="polite">
+        <h3>Forecast Result</h3>
+        <p>Loading product information...</p>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const productSelect = document.getElementById("product");
+    const resultDiv = document.getElementById("result");
+    const forecastButton = document.getElementById("forecastButton");
+
+    if (!productSelect || !resultDiv || !forecastButton) {
+        console.error("Required HTML elements are missing.");
+        return;
+    }
+
+    function showMessage(message, className = "muted") {
+        resultDiv.replaceChildren();
+
+        const heading = document.createElement("h3");
+        heading.textContent = "Forecast Result";
+
+        const paragraph = document.createElement("p");
+        paragraph.className = className;
+        paragraph.textContent = message;
+
+        resultDiv.append(heading, paragraph);
+    }
+
+    async function loadProducts() {
+        productSelect.innerHTML =
+            '<option value="">Loading products...</option>';
+
+        forecastButton.disabled = true;
+
+        showMessage("Connecting to the products API...");
+
+        try {
+            const response = await fetch("/api/products", {
+                cache: "no-store"
+            });
+
+            if (!response.ok) {
+                throw new Error(
+                    "Products API returned HTTP " + response.status
+                );
+            }
+
+            const products = await response.json();
+
+            if (!Array.isArray(products)) {
+                throw new Error("The products API did not return a list.");
+            }
+
+            productSelect.replaceChildren();
+
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = "-- Select Product --";
+            productSelect.appendChild(placeholder);
+
+            products.forEach(function (product) {
+                const option = document.createElement("option");
+
+                option.value = product.id;
+                option.textContent =
+                    product.product_name +
+                    " (ID: " + product.id +
+                    ", Stock: " + (product.stock_quantity ?? 0) + ")";
+
+                productSelect.appendChild(option);
+            });
+
+            if (products.length === 0) {
+                placeholder.textContent = "No products found";
+
+                showMessage(
+                    "No products found. Please add a product first.",
+                    "warning"
+                );
+            } else {
+                showMessage(
+                    products.length + " products loaded successfully. Select a product."
+                );
+            }
+
+        } catch (error) {
+            console.error("Product loading error:", error);
+
+            productSelect.innerHTML =
+                '<option value="">Unable to load products</option>';
+
+            showMessage(
+                "Product loading failed: " + error.message,
+                "error"
+            );
+        } finally {
+            forecastButton.disabled = false;
+        }
+    }
+
+    function addResultCard(label, value, highlight = false) {
+        const card = document.createElement("div");
+        card.className = "result-card";
+
+        const title = document.createElement("p");
+        title.textContent = label;
+
+        const resultValue = document.createElement("p");
+        resultValue.className = highlight ? "result-value" : "";
+        resultValue.textContent = String(value);
+
+        card.append(title, resultValue);
+        resultDiv.appendChild(card);
+    }
+
+    function displayForecast(data) {
+        resultDiv.replaceChildren();
+
+        const heading = document.createElement("h3");
+        heading.textContent = "Forecast Result";
+        resultDiv.appendChild(heading);
+
+        addResultCard("Product", data.product_name ?? "Unknown");
+
+        addResultCard(
+            "Total Historical Sales",
+            (data.total_historical_sales ?? 0) + " Units"
+        );
+
+        addResultCard(
+            "Recorded Selling Days",
+            data.selling_days ?? 0
+        );
+
+        addResultCard(
+            "Average Sales per Selling Day",
+            (data.average_sales_per_selling_day ?? 0) + " Units"
+        );
+
+        addResultCard(
+            "Predicted Demand (Next 7 Days)",
+            (data.predicted_demand_next_7_days ?? 0) + " Units",
+            true
+        );
+
+        addResultCard(
+            "Current Stock",
+            (data.current_stock ?? 0) + " Units"
+        );
+
+        addResultCard(
+            "Recommended Order",
+            (data.recommended_order ?? 0) + " Units",
+            true
+        );
+
+        const status = document.createElement("p");
+
+        if (Number(data.selling_days ?? 0) === 0) {
+            status.className = "warning";
+            status.textContent =
+                "NO SALES HISTORY: Add sales records for a meaningful forecast.";
+        } else if (Number(data.recommended_order ?? 0) > 0) {
+            status.className = "warning";
+            status.textContent =
+                "REORDER REQUIRED: Stock is below estimated demand.";
+        } else {
+            status.className = "success";
+            status.textContent =
+                "STOCK SUFFICIENT: Current stock covers estimated demand.";
+        }
+
+        resultDiv.appendChild(status);
+
+        const note = document.createElement("p");
+        note.className = "muted";
+        note.textContent =
+            "Forecast accuracy depends on the historical sales data available.";
+
+        resultDiv.appendChild(note);
+    }
+
+    async function forecastDemand() {
+        const productId = productSelect.value;
+
+        if (!productId) {
+            showMessage("Please select a product first.", "error");
+            return;
+        }
+
+        forecastButton.disabled = true;
+        forecastButton.textContent = "Calculating...";
+
+        showMessage("Calculating demand forecast...");
+
+        try {
+            const response = await fetch(
+                "/api/forecast/" + encodeURIComponent(productId),
+                { cache: "no-store" }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error || "Forecast API returned HTTP " + response.status
+                );
+            }
+
+            displayForecast(data);
+
+        } catch (error) {
+            console.error("Forecast error:", error);
+
+            showMessage(
+                "Forecast failed: " + error.message,
+                "error"
+            );
+        } finally {
+            forecastButton.disabled = false;
+            forecastButton.textContent = "Forecast Demand";
+        }
+    }
+
+    forecastButton.addEventListener("click", forecastDemand);
+
+    loadProducts();
+
+});
+</script>
+
+</body>
+</html>

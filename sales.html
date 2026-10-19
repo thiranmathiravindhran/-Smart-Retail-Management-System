@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Smart Retail Management - Sales</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f6f8;
+        }
+
+        header {
+            background-color: #1f4e79;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        nav {
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #1f4e79;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 90%;
+            margin: 30px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 8px 0;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #1f4e79;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #163a5c;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #1f4e79;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Smart Retail Management System</h1>
+        <h2>Sales Data Management</h2>
+    </header>
+
+    <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/products">Products</a>
+        <a href="/sales">Sales Data</a>
+        <a href="/forecast">Demand Forecasting</a>
+        <a href="/inventory">Inventory</a>
+        <a href="/reports">Reports</a>
+    </nav>
+
+    <div class="container">
+
+        <h2>Add Sales Data</h2>
+
+        <form id="salesForm" onsubmit="return false;">
+
+            <label>Product Name:</label>
+            <br>
+
+            <input
+                type="text"
+                id="productName"
+                placeholder="Example: Pen"
+            >
+
+            <br>
+
+            <label>Sales Date:</label>
+            <br>
+
+            <input
+                type="date"
+                id="salesDate"
+            >
+
+            <br>
+
+            <label>Quantity Sold:</label>
+            <br>
+
+            <input
+                type="number"
+                id="quantity"
+                placeholder="Example: 5"
+                min="1"
+            >
+
+            <br>
+
+            <label>Price Per Unit:</label>
+            <br>
+
+            <input
+                type="number"
+                id="price"
+                placeholder="Example: 20"
+                min="0"
+                step="0.01"
+            >
+
+            <br><br>
+
+            <button type="button" onclick="addSale()">
+                Add Sales Data
+            </button>
+
+        </form>
+
+        <hr>
+
+        <h2>Sales History</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Quantity Sold</th>
+                    <th>Price</th>
+                    <th>Total Sales</th>
+                </tr>
+            </thead>
+
+            <tbody id="salesTable">
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <script>
+
+        async function addSale() {
+
+            const product =
+                document.getElementById("productName").value.trim();
+
+            const date =
+                document.getElementById("salesDate").value;
+
+            const quantity =
+                document.getElementById("quantity").value;
+
+            const price =
+                document.getElementById("price").value;
+
+
+            if (
+                product === "" ||
+                date === "" ||
+                quantity === "" ||
+                price === ""
+            ) {
+
+                alert("Please fill all fields.");
+                return;
+
+            }
+
+
+            const quantityNumber = Number(quantity);
+            const priceNumber = Number(price);
+
+
+            if (quantityNumber <= 0) {
+
+                alert("Quantity must be greater than 0.");
+                return;
+
+            }
+
+
+            if (priceNumber < 0) {
+
+                alert("Price cannot be negative.");
+                return;
+
+            }
+
+
+            const total =
+                quantityNumber * priceNumber;
+
+
+            try {
+
+                const response = await fetch("/api/sales", {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        product_name: product,
+
+                        quantity_sold: quantityNumber,
+
+                        sale_date: date,
+
+                        total_amount: total
+
+                    })
+
+                });
+
+
+                const result = await response.json();
+
+
+                if (response.ok) {
+
+                    const table =
+                        document.getElementById("salesTable");
+
+
+                    const row =
+                        table.insertRow();
+
+
+                    row.insertCell(0).innerHTML = date;
+
+                    row.insertCell(1).innerHTML = product;
+
+                    row.insertCell(2).innerHTML =
+                        quantityNumber;
+
+                    row.insertCell(3).innerHTML =
+                        "₹" + priceNumber.toFixed(2);
+
+                    row.insertCell(4).innerHTML =
+                        "₹" + total.toFixed(2);
+
+
+                    document
+                        .getElementById("salesForm")
+                        .reset();
+
+
+                    alert("Sales data added successfully!");
+
+                } else {
+
+                    alert(
+                        "Error: " +
+                        (result.error || "Unable to add sales data.")
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Server connection error. " +
+                    "Please make sure Flask is running."
+                );
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>

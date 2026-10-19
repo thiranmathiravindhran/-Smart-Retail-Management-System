@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Retail Dashboard</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+        }
+
+        header {
+            background: #1f4e79;
+            color: white;
+            padding: 25px;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        header p {
+            margin-bottom: 0;
+        }
+
+        nav {
+            background: white;
+            padding: 15px;
+            box-shadow: 0 2px 5px #ccc;
+        }
+
+        nav a {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 5px;
+            text-decoration: none;
+            color: #1f4e79;
+            font-weight: bold;
+        }
+
+        nav a:hover {
+            color: #007bff;
+        }
+
+        .container {
+            padding: 30px;
+        }
+
+        .cards {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: white;
+            width: 200px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px #ddd;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #555;
+        }
+
+        .card h2 {
+            color: #1f4e79;
+            overflow-wrap: anywhere;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #1f4e79;
+            color: white;
+        }
+
+        .low {
+            color: red;
+            font-weight: bold;
+        }
+
+        .available {
+            color: green;
+            font-weight: bold;
+        }
+
+        .empty {
+            text-align: center;
+            color: #666;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .card {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Smart Retail Dashboard</h1>
+        <p>Demand Forecasting &amp; Inventory Optimization System</p>
+    </header>
+
+    <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/products">Products</a>
+        <a href="/sales">Sales</a>
+        <a href="/forecast">Forecasting</a>
+        <a href="/inventory">Inventory</a>
+        <a href="/reports">Reports</a>
+    </nav>
+
+    <div class="container">
+        <h2>Welcome Admin 👋</h2>
+
+        <!-- Dashboard Summary Cards -->
+        <div class="cards">
+            <div class="card">
+                <h3>Total Products</h3>
+                <h2>{{ total_products }}</h2>
+            </div>
+
+            <div class="card">
+                <h3>Current Stock</h3>
+                <h2>{{ total_stock }} Units</h2>
+            </div>
+
+            <div class="card">
+                <h3>Low Stock</h3>
+                <h2>{{ low_stock }} Products</h2>
+            </div>
+
+            <div class="card">
+                
+<h3>Predicted Demand</h3>
+
+<h2>
+    {% if predicted_demand is not none %}
+        {{ predicted_demand }} Units
+    {% else %}
+        Not calculated
+    {% endif %}
+</h2>
+            </div>
+        </div>
+
+        <!-- Dynamic Inventory Overview -->
+        <h2>Inventory Overview</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Current Stock</th>
+                    <th>Price (₹)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            
+<tbody>
+    {% for product in inventory_products %}
+    <tr>
+        <td>{{ product[0] }}</td>
+
+        <td>
+            {{ product[1] if product[1] is not none else 0 }}
+        </td>
+
+        <td>
+            ₹{{ "%.2f"|format(product[2] or 0) }}
+        </td>
+
+        {% if product[1] is none or product[1] <= 50 %}
+        <td class="low">Low Stock</td>
+        {% else %}
+        <td class="available">Stock Available</td>
+        {% endif %}
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="4" class="empty">
+            No products found. Please add a product.
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+<!-- Quick Actions -->
+<h2>Quick Actions</h2>
+
+<p><a href="/products">➕ Add Product</a></p>
+<p><a href="/sales">🧾 Add Sales Data</a></p>
+<p><a href="/forecast">📈 Forecast Demand</a></p>
+<p><a href="/inventory">📦 Optimize Inventory</a></p>
+<p><a href="/reports">📊 View Reports</a></p>
+</div>
+</body>
+</html>

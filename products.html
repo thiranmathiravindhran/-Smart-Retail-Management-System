@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Smart Retail Management - Products</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f6f8;
+        }
+
+        header {
+            background-color: #1f4e79;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            width: 90%;
+            margin: 30px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 8px;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #1f4e79;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #163a5c;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #1f4e79;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Smart Retail Management</h1>
+        <h2>Product Management</h2>
+    </header>
+
+    <div class="container">
+
+        <h2>Add Product</h2>
+
+        <form id="productForm" onsubmit="return false;">
+
+            <input type="text"
+                   id="productName"
+                   placeholder="Product Name">
+
+            <input type="text"
+                   id="category"
+                   placeholder="Category">
+
+            <input type="number"
+                   id="price"
+                   placeholder="Price">
+
+            <input type="number"
+                   id="stock"
+                   placeholder="Stock Quantity">
+
+            <input type="number"
+                   id="reorder"
+                   placeholder="Reorder Level">
+
+            <br><br>
+
+            <button type="button" onclick="addProduct()">
+                Add Product
+            </button>
+
+        </form>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody id="productTable">
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <script>
+
+        async function addProduct() {
+
+            let name = document.getElementById("productName").value;
+            let category = document.getElementById("category").value;
+            let price = document.getElementById("price").value;
+            let stock = document.getElementById("stock").value;
+            let reorder = document.getElementById("reorder").value;
+
+            if (
+                name === "" ||
+                category === "" ||
+                price === "" ||
+                stock === "" ||
+                reorder === ""
+            ) {
+                alert("Please fill all fields.");
+                return;
+            }
+
+            try {
+
+                let response = await fetch("/api/products", {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        product_name: name,
+                        category: category,
+                        price: Number(price),
+                        stock_quantity: Number(stock)
+
+                    })
+
+                });
+
+                let result = await response.json();
+
+                if (response.ok) {
+
+                    let status;
+
+                    if (Number(stock) <= Number(reorder)) {
+                        status = "Low Stock";
+                    } else {
+                        status = "Available";
+                    }
+
+                    let table = document.getElementById("productTable");
+
+                    let row = table.insertRow();
+
+                    row.insertCell(0).innerHTML = name;
+                    row.insertCell(1).innerHTML = category;
+                    row.insertCell(2).innerHTML = "₹" + price;
+                    row.insertCell(3).innerHTML = stock;
+                    row.insertCell(4).innerHTML = status;
+
+                    document.getElementById("productForm").reset();
+
+                    alert("Product added successfully!");
+
+                } else {
+
+                    alert("Error: " + result.error);
+
+                }
+
+            } catch (error) {
+
+                alert("Server connection error: " + error);
+
+                console.error(error);
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>

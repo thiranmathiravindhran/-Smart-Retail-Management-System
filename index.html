@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Retail Login</title>
+</head>
+
+<body>
+
+    <h1>Smart Retail Management System</h1>
+
+    <h2>Login</h2>
+
+    <form id="loginForm">
+
+        <label>Username:</label>
+        <br>
+        <input type="text" id="username" required>
+
+        <br><br>
+
+        <label>Password:</label>
+        <br>
+        <input type="password" id="password" required>
+
+        <br><br>
+
+        <button type="submit">Login</button>
+
+    </form>
+
+    <p id="message"></p>
+
+    <script>
+
+        document.getElementById("loginForm").onsubmit = function(event) {
+
+            event.preventDefault();
+
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            if (username === "admin" && password === "1234") {
+
+                window.location.href = "/dashboard";
+
+            } else {
+
+                document.getElementById("message").innerHTML =
+                    "Wrong Username or Password";
+
+            }
+
+        };
+
+    </script>
+
+</body>
+</html>
